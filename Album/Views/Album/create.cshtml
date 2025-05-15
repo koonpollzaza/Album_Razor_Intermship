@@ -1,0 +1,66 @@
+﻿@model Album
+
+<div class="card p-3 mt-3">
+    <h2>Create Album</h2>
+
+    <form asp-action="Create" enctype="multipart/form-data" method="post">
+        <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+
+        <div class="mb-3">
+            <label asp-for="Name" class="form-label">Name:</label>
+            <input asp-for="Name" class="form-control" required />
+            <span asp-validation-for="Name" class="text-danger"></span>
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">Cover Photo:</label>
+            <input type="file" name="CoverPhoto" class="form-control" accept=".jpg,.jpeg,.png,.gif" />
+            <div class="text-danger small">only (JPEG, GIF, and PNG)</div>
+        </div>
+
+        <div class="mb-3">
+            <label asp-for="Description" class="form-label">Description:</label>
+            <textarea asp-for="Description" class="form-control" rows="4"></textarea>
+            <span asp-validation-for="Description" class="text-danger"></span>
+        </div>
+        <div class="d-flex justify-content-end mb-2">
+            <button type="button" class="btn btn-primary" onclick="addSong()">เพิ่ม</button>
+        </div>
+        <div class="mb-3">
+            <label class="form-label">Songs:</label>
+            <table class="table table-bordered">
+                <thead>
+                    <tr>
+                        <th>ชื่อเพลง</th>
+                        <th>จัดการ</th>
+                    </tr>
+                </thead>
+                <tbody id="songsTable">
+                    <tr>
+                        <td><input type="text" name="Songs" class="form-control" placeholder="Song name" required /></td>
+                        <td><button type="button" class="btn btn-danger btn-sm" onclick="this.closest('tr').remove()">Delete</button></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <button type="submit" class="btn btn-success">Save</button>
+        <a asp-action="Index" class="btn btn-secondary ms-2">Back</a>
+    </form>
+</div>
+
+@section Scripts {
+    <script>
+        function addSong() {
+            const tbody = document.getElementById("songsTable");
+            const row = document.createElement("tr");
+            row.innerHTML = `
+                <td><input type="text" name="Songs" class="form-control" placeholder="Song name" required/></td>
+                <td><button type="button" class="btn btn-danger btn-sm" onclick="this.closest('tr').remove()">Delete</button></td>
+            `;
+            tbody.appendChild(row);
+        }
+    </script>
+
+    @await Html.PartialAsync("_ValidationScriptsPartial")
+}

@@ -1,0 +1,20 @@
+﻿@model Song
+
+@Html.HiddenFor(model => model.Id)
+@Html.HiddenFor(model => model.Name)
+@Html.HiddenFor(model => model.CreateBy)
+@Html.HiddenFor(model => model.CreateDate)
+@Html.HiddenFor(model => model.UpdateBy)
+@Html.HiddenFor(model => model.UpdateDate)
+
+<!-- ตั้งค่า IsDelete เป็น 0 โดยเริ่มต้น -->
+<input type="hidden" name="Songs[@Model.Id].IsDelete" value="@Model.IsDelete" />
+
+<button type="button" class="btn btn-danger" onclick="deleteSong(@Model.Id)">ลบเพลง</button>
+
+<script>
+    function deleteSong(songId) {
+        document.querySelector(`input[name='Songs[${songId}].IsDelete']`).value = 1;
+        alert("เพลงถูกตั้งค่าสำหรับการลบ");
+    }
+</script>

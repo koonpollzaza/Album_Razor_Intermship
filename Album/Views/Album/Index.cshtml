@@ -1,0 +1,85 @@
+﻿@model IEnumerable<Album>
+
+<h2>ไฟล์</h2>
+
+<form method="get" action="@Url.Action("Index", "Album")" class="d-flex align-items-center">
+    <label for="searchString" class="me-2">Name :</label>
+    <input type="text" name="searchString" class="form-control me-2" style="width: 250px;"value="@Context.Request.Query["searchString"]" />
+    <button type="submit" class="btn btn-primary">ค้นหา</button>
+</form>
+
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <div></div>
+    <a asp-action="Create" class="btn btn-success">Create</a>
+</div>
+
+<div class="mt-3">
+    <table class="table table-bordered align-middle text-center">
+        <thead class="table-light">
+            <tr>
+                <th style="width:60px;">No</th>
+                <th style="width:200px;">Name</th>
+                <th style="width:160px;">Cover Photo</th>
+                <th style="width:200px;">เพลง</th>
+                <th style="width:200px;">Manage</th>
+            </tr>
+        </thead>
+        <tbody>
+            @if (Model != null && Model.Any())
+            {
+                var count = 1;
+                foreach (var album in Model)
+                {
+                    <tr>
+                        <td>@count</td>
+                        <td class="text-start">@album.Name</td>
+                        <td>
+                            @if (album.File != null)
+                            {
+                                <img src="@album.File.FilePath" class="img-thumbnail" style="max-width:120px; max-height:120px;" />
+                            }
+                            else
+                            {
+                                <div>ไม่มีภาพปก</div>
+                            }
+                        </td>
+                        <td>
+                            <div class="d-flex justify-content-between align-items-center">
+                            <ol>
+                            @if (album.Songs != null && album.Songs.Any())
+                            {
+                                foreach (var song in album.Songs)
+                                {
+                                    <li>@song.Name</li>
+                                }
+                            }
+                            else
+                            {
+                                <div>ไม่มีเพลง</div>
+                            } 
+                            </ol>
+                            </div>
+                        </td>
+                        <td>
+                            <a asp-action="Edit" asp-route-id="@album.Id" class="btn btn-warning btn-sm">แก้ไข</a>
+                            <form asp-action="Delete" asp-route-id="@album.Id" method="post" class="d-inline">
+                                <button type="submit" class="btn btn-danger btn-sm"
+                                        onclick="return confirm('คุณต้องการลบอัลบั้มนี้หรือไม่?');">
+                                    ลบ
+                                </button>
+                            </form>
+                        </td>
+                    </tr>
+                    count++;
+                }
+            }
+            else
+            {
+                <tr>
+                    <td colspan="5">ไม่มีอัลบั้มในระบบ</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>
