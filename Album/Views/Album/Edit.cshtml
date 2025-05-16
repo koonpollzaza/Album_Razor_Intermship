@@ -3,12 +3,16 @@
 <h2>Edit Album</h2>
 <form asp-action="Edit" method="post" enctype="multipart/form-data">
     <input type="hidden" asp-for="Id" />
+
+    <!-- Album Name -->
     <div class="mb-3">
-        <label for="Name">* Name:</label>
+        <label for="Name">Name:</label>
         <input type="text" asp-for="Name" class="form-control" required />
     </div>
+
+    <!-- Cover Photo -->
     <div class="mb-3">
-        <label for="CoverPhoto">* Cover Photo:</label>
+        <label for="CoverPhoto">Cover Photo:</label>
         <input type="file" name="CoverPhoto" class="form-control" accept="image/jpeg,image/png,image/gif" />
         <small class="text-danger">*only (JPEG, GIF, and PNG)</small>
 
@@ -20,17 +24,21 @@
             </div>
         }
     </div>
+
+    <!-- Description -->
     <div class="mb-3">
         <label for="Description">Description:</label>
-        <textarea asp-for="Description" class="form-control"></textarea>
+        <textarea asp-for="Description" class="form-control" rows="4"></textarea>
     </div>
+
+    <!-- Song List -->
     <div class="mb-3">
         <label for="Songs">Songs:</label>
         <table class="table table-bordered">
             <thead>
                 <tr>
-                    <th>ชื่อเพลง</th>
-                    <th>จัดการ</th>
+                    <th style="width: 80%;">ชื่อเพลง</th>
+                    <th style="width: 20%;">จัดการ</th>
                 </tr>
             </thead>
             <tbody id="song-list">
@@ -39,22 +47,27 @@
                     for (int i = 0; i < Model.Songs.Count; i++)
                     {
                         <tr>
+
                             <td>
-                                <input type="text" name="Songs[@i]" value="@Model.Songs.ElementAt(i).Name" class="form-control" required/>
+                                <input type="text" name="Songs[@i]" value="@Model.Songs.ElementAt(i).Name" class="form-control" placeholder="กรอกชื่อเพลง..." required />
                             </td>
                             <td>
-                                <button type="button" class="btn btn-danger" onclick="removeSong(this)">Delete</button>
+                                <button type="button" class="btn btn-danger btn-sm" onclick="removeSong(this)">Delete</button>
                             </td>
                         </tr>
                     }
                 }
             </tbody>
         </table>
-        <button type="button" class="btn btn-secondary" onclick="addSong()">เพิ่ม</button>
+        <button type="button" class="btn btn-primary" onclick="addSong()">เพิ่ม</button>
     </div>
-    <button type="submit" class="btn btn-primary">Save</button>
+
+    <!-- Submit Buttons -->
+    <button type="submit" class="btn btn-success">Save</button>
     <a asp-action="Index" class="btn btn-secondary">Back</a>
 </form>
+
+<!-- JavaScript for Adding and Removing Songs -->
 <script>
     function addSong() {
         const songList = document.getElementById("song-list");
@@ -62,10 +75,10 @@
         const row = `
             <tr>
                 <td>
-                    <input type="text" name="Songs[${index}]" class="form-control" />
+                    <input type="text" name="Songs[${index}]" class="form-control" placeholder="กรอกชื่อเพลง..." required />
                 </td>
                 <td>
-                    <button type="button" class="btn btn-danger" onclick="removeSong(this)">Delete</button>
+                    <button type="button" class="btn btn-danger btn-sm" onclick="removeSong(this)">Delete</button>
                 </td>
             </tr>
         `;
@@ -75,5 +88,12 @@
     function removeSong(button) {
         const row = button.parentElement.parentElement;
         row.remove();
+
+        // อัปเดตชื่ออินเด็กซ์ของเพลง
+        const rows = document.querySelectorAll("#song-list tr");
+        rows.forEach((tr, index) => {
+            const input = tr.querySelector("input");
+            input.name = `Songs[${index}]`;
+        });
     }
 </script>
