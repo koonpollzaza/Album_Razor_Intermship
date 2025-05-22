@@ -19,20 +19,26 @@ namespace Album.Controllers
 
         public IActionResult Index(string searchString)
         {
-            List<Models.Album> albums = _context.Albums
-                .Include(a => a.File)
-                .Include(a => a.Songs.Where(a => a.IsDelete != true))
-                .Where(a => a.IsDelete != true)
-                .ToList();
+            //List<Models.Album> albums = _context.Albums
+            //    .Include(a => a.File)
+            //    .Include(a => a.Songs.Where(a => a.IsDelete != true))
+            //    .Where(a => a.IsDelete != true)
+            //    .ToList();
 
-            if (!string.IsNullOrEmpty(searchString))
-            {
-                albums = albums
-                    .Where(a => a.Name.Contains(searchString.Trim(), StringComparison.OrdinalIgnoreCase))
-                    .ToList();
-            }
+            //if (!string.IsNullOrEmpty(searchString))
+            //{
+            //    albums = albums
+            //        .Where(a => a.Name.Contains(searchString.Trim(), StringComparison.OrdinalIgnoreCase))
+            //        .ToList();
+            //}
 
+            //return View(albums);
+            //_context.Albums.Add();
+
+            List<Models.Album> albums = new Models.Album().GetAll(_context, searchString);
             return View(albums);
+
+
         }
 
         public IActionResult Create()
@@ -44,64 +50,29 @@ namespace Album.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(Models.Album album, List<string> Songs, IFormFile CoverPhoto)
         {
-            if (CoverPhoto == null || CoverPhoto.Length == 0)
+            if (!ModelState.IsValid)
             {
-                ModelState.AddModelError("CoverPhoto", "กรุณาเลือกภาพปก");
                 return View(album);
             }
 
-            if (ModelState.IsValid)
+            try
             {
-                // อัปโหลดภาพ
-                // สร้างชื่อไฟล์จากวันที่และเวลาปัจจุบัน
-                var fileName = DateTime.Now.ToString("yyyyMMdd_HHmmss") + Path.GetExtension(CoverPhoto.FileName);
-                var uploadPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot/uploads", fileName);
-
-                using (var stream = new FileStream(uploadPath, FileMode.Create))
-                {
-                    await CoverPhoto.CopyToAsync(stream);
-                }
-
-                var file = new Models.File
-                {
-                    FileName = fileName,
-                    FilePath = "/uploads/" + fileName
-                };
-
-                _context.Files.Add(file);
-                await _context.SaveChangesAsync();
-
-                album.FileId = file.Id;
-                album.CreateDate = DateTime.Now;
-                album.IsDelete = false;
-
-                _context.Albums.Add(album);
-                await _context.SaveChangesAsync();
-
-                //เพิ่มเพลง
-                if (Songs != null && Songs.Count > 0)
-                {
-                    var songList = Songs.Select(songName => new Song
-                    {
-                        Name = songName,
-                        AlbumId = album.Id
-                    }).ToList();
-
-                    _context.Songs.AddRange(songList);
-                    await _context.SaveChangesAsync();
-                }
-
+                await album.Create(_context, CoverPhoto, Songs);
                 return RedirectToAction(nameof(Index));
             }
-
-            return View(album);
+            catch (ArgumentException ex)
+            {
+                ModelState.AddModelError("CoverPhoto", ex.Message);
+                return View(album);
+            }
         }
+
         public async Task<IActionResult> Edit(int id)
         {
             var album = await _context.Albums
                 .Include(a => a.File)
                 .Include(a => a.Songs.Where(a => a.IsDelete != true))
-                .FirstOrDefaultAsync(a => a.Id == id);
+                .FirstOrDefaultAsync(a => a.Id == id && a.IsDelete != true);
 
             if (album == null)
             {
@@ -111,92 +82,123 @@ namespace Album.Controllers
             return View(album);
         }
 
+        //[HttpPost]
+        //[ValidateAntiForgeryToken]
+        //public async Task<IActionResult> Edit(Models.Album album, List<string> Songs, IFormFile? CoverPhoto, string Editphoto)
+        //{
+        //    if (ModelState.IsValid)
+        //    {
+        //        var dbAlbum = await _context.Albums
+        //            .Include(a => a.File)
+        //            .Include(a => a.Songs.Where(a => a.IsDelete != true))
+        //            .Where(a => a.IsDelete != true)
+        //            .FirstOrDefaultAsync(a => a.Id == album.Id);
+
+        //        if (dbAlbum == null)
+        //        {
+        //            return NotFound();
+        //        }
+
+        //        // อัปเดตข้อมูลอัลบั้ม
+        //        dbAlbum.Name = album.Name;
+        //        dbAlbum.Description = album.Description;
+        //        dbAlbum.UpdateDate = DateTime.Now;
+        //        dbAlbum.UpdateBy = "pon";
+
+
+        //        // ✔ อัปเดตภาพปก
+        //        if (Editphoto == "true" && dbAlbum.File != null)
+        //        {
+        //            // ลบข้อมูลไฟล์
+        //            dbAlbum.File.IsDelete = true;
+        //            dbAlbum.FileId = null;
+        //        }
+
+        //        if (CoverPhoto != null && CoverPhoto.Length > 0)
+        //        {
+        //            var fileName = DateTime.Now.ToString("yyyyMMdd_HHmmss") + Path.GetExtension(CoverPhoto.FileName);
+        //            var uploadPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot/uploads", fileName);
+
+        //            using (var stream = new FileStream(uploadPath, FileMode.Create))
+        //            {
+        //                await CoverPhoto.CopyToAsync(stream);
+        //            }
+
+        //            var file = new Models.File
+        //            {
+        //                FileName = fileName,
+        //                FilePath = "/uploads/" + fileName,
+        //                UpdateBy = "pon",
+        //                CreateBy = "pon",
+        //                UpdateDate = DateTime.Now,
+        //                CreateDate = DateTime.Now,
+        //                IsDelete = false
+        //            };
+
+        //            _context.Files.Add(file);
+        //            await _context.SaveChangesAsync();
+
+        //            dbAlbum.FileId = file.Id;
+        //            //dbAlbum.CreateDate = DateTime.Now;
+        //            //dbAlbum.IsDelete = false;
+        //        }
+        //        foreach (Song song in dbAlbum.Songs)
+        //        {
+        //            if (Songs.Contains(song.Name))
+        //            {
+        //                song.IsDelete = false;
+        //                Songs.Remove(song.Name);
+
+        //            }
+        //            else
+        //            {
+        //                song.IsDelete = true;
+        //            }
+        //        }
+        //        // อัปเดตเพลง
+        //        //List<Song> existingSongs = dbAlbum.Songs.ToList();
+        //        //_context.Songs.RemoveRange(existingSongs);
+
+        //        if (Songs != null)
+        //        {
+        //            List<Song> newSongs = Songs.Select(songName => new Song
+        //            {
+        //                Name = songName,
+        //                AlbumId = dbAlbum.Id,
+        //                UpdateBy = "pon",
+        //                CreateBy = "pon",
+        //                UpdateDate = DateTime.Now,
+        //                CreateDate = DateTime.Now,
+        //                IsDelete = false
+        //            }).ToList();
+
+        //            _context.Songs.AddRange(newSongs);
+        //        }
+
+        //        await _context.SaveChangesAsync();
+        //        return RedirectToAction(nameof(Index));
+        //    }
+
+        //    return View(album);
+        //}
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(Models.Album album, List<string> Songs, IFormFile? CoverPhoto, string Editphoto)
         {
-            if (ModelState.IsValid)
+            if (!ModelState.IsValid)
+                return View(album);
+
+            try
             {
-                var dbAlbum = await _context.Albums
-                    .Include(a => a.File)
-                    .Include(a => a.Songs.Where(a => a.IsDelete != true))
-                    .Where(a => a.IsDelete != true)
-                    .FirstOrDefaultAsync(a => a.Id == album.Id);
-
-                if (dbAlbum == null)
-                {
-                    return NotFound();
-                }
-
-                // อัปเดตข้อมูลอัลบั้ม
-                dbAlbum.Name = album.Name;
-                dbAlbum.Description = album.Description;
-                dbAlbum.UpdateDate = DateTime.Now;
-
-                // ✔ อัปเดตภาพปก
-                if (Editphoto == "true" && dbAlbum.File != null)
-                {
-                    // ลบข้อมูลไฟล์
-                    dbAlbum.File.IsDelete = true;
-                    dbAlbum.FileId = null;
-                }
-
-                if (CoverPhoto != null && CoverPhoto.Length > 0)
-                {
-                    var fileName = DateTime.Now.ToString("yyyyMMdd_HHmmss") + Path.GetExtension(CoverPhoto.FileName);
-                    var uploadPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot/uploads", fileName);
-
-                    using (var stream = new FileStream(uploadPath, FileMode.Create))
-                    {
-                        await CoverPhoto.CopyToAsync(stream);
-                    }
-
-                    var file = new Models.File
-                    {
-                        FileName = fileName,
-                        FilePath = "/uploads/" + fileName,
-                        IsDelete = false
-                    };
-
-                    _context.Files.Add(file);
-                    await _context.SaveChangesAsync();
-
-                    dbAlbum.FileId = file.Id;
-                }
-                foreach (Song song in dbAlbum.Songs)
-                {
-                    if (Songs.Contains(song.Name))
-                    {
-                        song.IsDelete = false;
-                        Songs.Remove(song.Name);
-
-                    }
-                    else
-                    {
-                        song.IsDelete = true;
-                    }
-                }
-                // อัปเดตเพลง
-                //List<Song> existingSongs = dbAlbum.Songs.ToList();
-                //_context.Songs.RemoveRange(existingSongs);
-
-                if (Songs != null)
-                {
-                    List<Song> newSongs = Songs.Select(songName => new Song
-                    {
-                        Name = songName,
-                        AlbumId = dbAlbum.Id,
-                        IsDelete = false
-                    }).ToList();
-
-                    _context.Songs.AddRange(newSongs);
-                }
-
-                await _context.SaveChangesAsync();
+                bool removeOldPhoto = Editphoto == "true";
+                await album.Edit(_context, CoverPhoto, Songs, removeOldPhoto, "pon");
                 return RedirectToAction(nameof(Index));
             }
-
-            return View(album);
+            catch (Exception ex)
+            {
+                ModelState.AddModelError(string.Empty, ex.Message);
+                return View(album);
+            }
         }
 
         // ลบอัลบั้ม
@@ -213,6 +215,15 @@ namespace Album.Controllers
             }
 
             album.IsDelete = true;
+
+            foreach ( var song in album.Songs)
+            {
+                song.IsDelete = true;
+            }
+            if(album.File != null)
+            {
+                album.File.IsDelete = true;
+            }
             await _context.SaveChangesAsync();
             //// ลบเพลง
             //_context.Songs.RemoveRange(album.Songs);
